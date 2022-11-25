@@ -1,0 +1,405 @@
+---
+title: 'Animal on the move: motion process concepts, biases and scales'
+author: Alessandra Bertassoni; Cristiano H. G. M. Filho; Edgar Luiz de Lima; Felipe
+  Pessoa da Silva; Filipe Guimarães Lima; Paulo De Marco Júnior
+date: "25/11/2021"
+output:
+   html_document: default
+---
+
+## 1. Preparing the environment and data
+
+Loading R packages.
+
+```{r}
+library(openxlsx)
+library(tidyverse)
+library(effectsize)
+library(ggpubr)
+```
+
+Loading each reviewer's database.
+
+```{r}
+Ale<- read.xlsx("effort_Ale.xlsx")
+cris<- read.xlsx("effort_Cristiano.xlsx")
+ed<- read.xlsx("effort_Edgar.xlsx")
+Feli<-read.xlsx("effort_Felipe.xlsx")
+Fili<- read.xlsx("effort_Filipe.xlsx")
+```
+
+Union and standardization of databases.
+
+```{r}
+alldata<- rbind(Ale,cris, ed, Feli, Fili)
+
+alldata$method<-alldata$method%>%str_replace_all( ";" , "/")%>%
+  str_replace_all("_", " ")
+
+alldata$metrica_summary<-alldata$metrica_summary%>%
+  str_replace_all( ";" , "/")%>%str_replace_all( "," , "/")%>%
+  str_replace_all("_", " ")
+
+alldata$metrica_quali<-alldata$metrica_quali%>%
+  str_replace_all( ";" , "/")%>%str_replace_all( "," , "/")%>%
+  str_replace_all("_", " ")
+
+View(alldata)# Viewing the data
+
+write.xlsx(alldata, "alldata.xlsx", overwrite = T)# Save the data
+```
+
+After one more step of manual standardization with the presence of all reviewers, we arrived at the final database. Here we remove from the dataset the articles that were vetoed.
+
+```{r}
+## Loading final database
+data<- read.xlsx("alldata_Final.xlsx")
+
+## Removing vetoed articles
+data<-data%>%replace(is.na(.), 0)%>%
+  filter(method!= "vetted")%>%
+  filter(method!=0 & obs!=0 )%>%
+  select(PY,taxon_order1:disc_view)
+
+## Viewing the data
+View(data)
+```
+
+# 2. Biological scales x Study methods
+
+Selecting columns to use in Biological Scales and study Methods Analysis.
+
+```{r}
+metlv<- data%>%select(theoretical,empirical_study,analytical_tools,
+                       pop_biol, move_ecol, biogeog, land_ecol)
+View(metlv)
+odd<-as.data.frame(matrix(nrow = 8, ncol = 3))
+resul<-as.data.frame(matrix(nrow = 8, ncol = 3))
+```
+
+Calculating the frequency tables of Biological Scales and study Methods Analysis.
+
+```{r}
+#Theoretical
+ftpop<- ftable(metlv$theoretical, metlv$pop_biol)
+ftpop<-ftpop[,c(2,1)]
+ftmeco<- ftable(metlv$theoretical, metlv$move_ecol)
+ftmeco<-ftmeco[,c(2,1)]
+ftbigeo<- ftable(metlv$theoretical, metlv$biogeog)
+ftbigeo<-ftbigeo[,c(2,1)]
+ftlandeco<- ftable(metlv$theoretical, metlv$land_ecol)
+ftlandeco<-ftlandeco[,c(2,1)]
+
+```
+
+Calculating the frequency tables of Biological Scales and study Methods Analysis.
+
+```{r}
+### Theoretical and Scales
+ftpop<- ftable(metlv2$theoretical, metlv2$pop_biol)
+ftpop<-ftpop[,c(2,1)]
+ftmeco<- ftable(metlv$theoretical, metlv$move_ecol)
+ftmeco<-ftmeco[,c(2,1)]
+ftbigeo<- ftable(metlv$theoretical, metlv$biogeog)
+ftbigeo<-ftbigeo[,c(2,1)]
+ftlandeco<- ftable(metlv$theoretical, metlv$land_ecol)
+ftlandeco<-ftlandeco[,c(2,1)]
+
+### Odds Ratio
+etpop<- oddsratio(ftpop)
+odd[1,]<-etpop[,c(1,3,4)]
+etmeco<- oddsratio(ftmeco)
+odd[2,]<-etmeco[,c(1,3,4)]
+etbigeo<-oddsratio(ftbigeo)
+odd[3,]<-etbigeo[,c(1,3,4)]
+etlandeco<- oddsratio(ftlandeco)
+odd[4,]<-etlandeco[,c(1,3,4)]
+
+### Empirical
+fepop<- ftable(metlv$empirical_study, metlv$pop_biol)
+fepop<-fepop[,c(2,1)]
+femeco<- ftable(metlv$empirical_study, metlv$move_ecol)
+femeco<-femeco[,c(2,1)]
+febigeo<- ftable(metlv$empirical_study, metlv$biogeog)
+febigeo<-febigeo[,c(2,1)]
+felandeco<- ftable(metlv$empirical_study, metlv$land_ecol)
+felandeco<-felandeco[,c(2,1)]
+
+### Odds ratio
+fepop<- oddsratio(fepop)
+odd[5,]<-fepop[,c(1,3,4)]
+femeco<- oddsratio(femeco)
+odd[6,]<-femeco[,c(1,3,4)]
+febigeo<-oddsratio(febigeo)
+odd[7,]<-febigeo[,c(1,3,4)]
+felandeco<- oddsratio(felandeco)
+odd[8,]<-felandeco[,c(1,3,4)]
+
+
+### Preparing the table.
+View(odd)
+colnames(odd)<- c("OR", "lw", "up")
+sc<-c("Pop. Biology", "Movement Eco.", "Biogeography", "Land. Ecology")
+tabela<-data.frame(sc,odd)
+View(tabela)
+
+write.xlsx(tabela, "BioScale.xlsx", overwrite = T)
+
+tab<-tabela[1:4,]
+
+```
+
+Theoretical x Biological scales graphic.
+
+```{r}
+BS<-ggplot(tab, aes(x=sc,y= OR, ymin= lw, ymax= up))+ 
+  geom_point(size=5)+
+  geom_errorbar(data= tab, width= 0.05, size= 1)+
+  coord_flip()+
+  scale_y_continuous(breaks= seq(0.2,3.5, 0.3),limits = c(0.2,3.5))+
+  geom_hline(yintercept = 1, linetype="dashed", size= 1)+
+  xlab("Biological Scale")+
+  ylab("Odds Ratio")+
+  labs(tag = "a)", title = "Theoretical Study")+
+  annotate("text", x = c(2.946), y =c(3.32), label = "*", size= 18 )+
+  theme_classic() +
+  theme(panel.grid.major = element_blank(),axis.text = element_text(colour = "Black",size=16), axis.text.y = element_text(colour = "Black",size=14),panel.grid.minor = element_blank(),axis.title = element_text(colour = "Black", size= 20), legend.title = element_blank(), legend.text = element_text(size = 18),plot.title = element_text(hjust = 0.5, size = 23),strip.background = element_blank(), strip.text = element_blank(),
+        axis.line = element_line(size = 1),
+        plot.tag = element_text(size = 16, face = "bold"))
+```
+
+# 3. Movement process and Study methods
+
+Selecting columns to use in Movement process and Study Methods analysis.
+
+```{r}
+dfterms<- data%>%select(theoretical,empirical_study,dispersial_bin,dispersion_bin,
+  displacement_bin,movement_bin, migration_bin)
+View(dfterms)
+
+
+
+odd2<-as.data.frame(matrix(nrow = 10, ncol = 3))
+resul2<-as.data.frame(matrix(nrow = 10, ncol = 3))
+```
+
+Calculating the frequency tables of Motion process and Study Methods.
+
+```{r}
+ftable(dfterms$theoretical, dfterms$empirical_study)
+dfterms<- dfterms%>%mutate(excl= theoretical+empirical_study)%>%filter(excl!=2)
+View(dfterms)
+
+#Theoretical
+ftdsal<- ftable(dfterms$theoretical, dfterms$dispersial_bin)
+ftdsal<- ftdsal[,c(2,1)]
+ftdsion<- ftable(dfterms$theoretical, dfterms$dispersion_bin)
+ftdsion<- ftdsion[,c(2,1)]
+ftdispla<- ftable(dfterms$theoretical, dfterms$displacement_bin)
+ftdispla<- ftdispla[,c(2,1)]
+ftmov<- ftable(dfterms$theoretical, dfterms$movement_bin)
+ftmov<- ftmov[,c(2,1)]
+ftmigra<- ftable(dfterms$theoretical, dfterms$migration_bin)
+ftmigra<- ftmigra[,c(2,1)]
+
+### Effect size estimate.
+etsal<- oddsratio(ftdsal)
+odd2[1,]<-etsal[,c(1,3,4)]
+etsion<- oddsratio(ftdsion)
+odd2[2,]<-etsion[,c(1,3,4)]
+etispla<- oddsratio(ftdispla)
+odd2[3,]<-etispla[,c(1,3,4)]
+etmov<- oddsratio(ftmov)
+odd2[4,]<-etmov[,c(1,3,4)]
+etmigra<- oddsratio(ftmigra)
+odd2[5,]<-etmigra[,c(1,3,4)]
+
+##Empirical
+fedsal<- ftable(dfterms$empirical_study, dfterms$dispersial_bin)
+fedsal<- fedsal[,c(2,1)]
+fedsion<- ftable(dfterms$empirical_study, dfterms$dispersion_bin)
+fedsion<- fedsion[,c(2,1)]
+fedispla<- ftable(dfterms$empirical_study, dfterms$displacement_bin)
+fedispla<- fedispla[,c(2,1)]
+femov<- ftable(dfterms$empirical_study, dfterms$movement_bin)
+femov<- femov[,c(2,1)]
+femigra<- ftable(dfterms$empirical_study, dfterms$migration_bin)
+femigra<- femigra[,c(2,1)]
+
+## Odds ratio
+eesal<- oddsratio(fedsal)
+odd2[6,]<-eesal[,c(1,3,4)]
+eesion<- oddsratio(fedsion)
+odd2[7,]<-eesion[,c(1,3,4)]
+eeispla<- oddsratio(fedispla)
+odd2[8,]<-eeispla[,c(1,3,4)]
+eemov<- oddsratio(femov)
+odd2[9,]<-eemov[,c(1,3,4)]
+eemigra<- oddsratio(femigra)
+odd2[10,]<-eemigra[,c(1,3,4)]
+
+### Preparing the table
+View(odd2)
+colnames(odd2)<- c("OR", "lw", "up")
+sc2<-c("Dispersal", "Dispersion", "Displacement", "Movement", "Migration")
+tabela2<-data.frame(sc2,odd2)
+View(tabela2)
+
+write.xlsx(tabela2, "MotionProcess.xlsx", overwrite = T)
+```
+
+Theoretical x Motion process graphic.
+
+```{r}
+MP<-ggplot(tabela2, aes(x=sc2,y= OR, ymin= lw, ymax= up))+ 
+  geom_point(size=5)+
+  geom_errorbar(data= tabela2, width= 0.05, size= 1)+
+  coord_flip()+
+  scale_y_continuous(breaks= seq(0.0,5.0, 0.5),limits = c(0.0,5.0))+
+  geom_hline(yintercept = 1, linetype="dashed", size= 1)+
+  xlab("Motion process")+
+  ylab("Odds Ratio")+
+  labs(tag = "b)", title = "Theoretical Study")+
+  annotate("text", x = c(0.9), y =c(0.8), label = "*", size= 18 )+
+  #annotate("text", x = c(7), y =c(1),label = "*", size= 9 )+
+  theme_classic() +
+  theme(panel.grid.major = element_blank(),axis.text = element_text(colour = "Black",size=16), axis.text.y = element_text(colour = "Black",size=14),panel.grid.minor = element_blank(),axis.title = element_text(colour = "Black", size= 20), legend.title = element_blank(), legend.text = element_text(size = 18),plot.title = element_text(hjust = 0.5, size = 23),strip.background = element_blank(), strip.text = element_blank(),
+        axis.line = element_line(size = 1),
+        plot.tag = element_text(size = 16, face = "bold"))
+```
+
+Uniting the graphics.
+
+```{r}
+ggarrange(BS,MP, nrow = 1,ncol = 2)
+
+ggsave(filename = "Figure_5.pdf", width = 55, height = 22, units = "cm", dpi = 600)
+```
+
+# 4. Taxon analysis of Biological scale x Motion Process
+
+Excluding studies that are both theoretical and empirical for mammals.
+
+```{r}
+ftable(metlv$theoretical, metlv$empirical_study)
+metlv2<- metlv%>%mutate(excl= theoretical+empirical_study)%>%filter(excl!=2)
+View(metlv2)
+```
+
+Estimating the frequency table.
+
+```{r}
+#Terms
+dispersial<- ftable(dados$taxon_group, dados$dispersial_bin)
+dispersial<- dispersial[c(2,1),]
+dispersion<- ftable(dados$taxon_group, dados$dispersion_bin)
+dispersion<- dispersion[c(2,1),]
+displacement<- ftable(dados$taxon_group, dados$displacement_bin)
+displacement<- displacement[c(2,1),]
+movement<- ftable(dados$taxon_group, dados$movement_bin)
+movement<- movement[c(2,1),]
+migration<- ftable(dados$taxon_group, dados$migration_bin)
+migration<- migration[c(2,1),]
+
+#Escala
+biol<- ftable(dados$taxon_group, dados$pop_biol)
+biol<- biol[c(2,1),]
+movecol<- ftable(dados$taxon_group, dados$move_ecol)
+movecol<- movecol[c(2,1),]
+biogeo<- ftable(dados$taxon_group, dados$biogeog)
+biogeo<- biogeo[c(2,1),]
+land<- ftable(dados$taxon_group, dados$land_ecol)
+land<- land[c(2,1),]
+
+odd3<-as.data.frame(matrix(nrow = 9, ncol = 3))
+resul3<-as.data.frame(matrix(nrow = 9, ncol = 3))
+
+```
+
+Odds ratio estimate for motion process and biological scales.
+
+```{r}
+#Motion process
+orsal<- oddsratio(dispersial)
+odd3[1,]<-orsal[,c(1,3,4)]
+orsion<- oddsratio(dispersion)
+odd3[2,]<-orsion[,c(1,3,4)]
+ordispla<- oddsratio(displacement)
+odd3[3,]<-ordispla[,c(1,3,4)]
+ormov<- oddsratio(movement)
+odd3[4,]<-ormov[,c(1,3,4)]
+ormigra<- oddsratio(migration)
+odd3[5,]<-ormigra[,c(1,3,4)]
+
+#Biological scale
+orbiol<- oddsratio(pbiol)
+odd3[6,]<-orbiol[,c(1,3,4)]
+ormov<- oddsratio(pmov)
+odd3[7,]<-ormov[,c(1,3,4)]
+orbiogeo<- oddsratio(pbiogeo)
+odd3[8,]<-orbiogeo[,c(1,3,4)]
+orland<- oddsratio(pland)
+odd3[9,]<-orland[,c(1,3,4)]
+```
+
+Preparing the table.
+
+```{r}
+ts2<- c("Terms","Terms", "Terms","Terms","Terms", "Scale","Scale","Scale","Scale")
+ter2<- c("Dispersal", "Dispersion", "Displacement", "Movement", "Migration",
+        "Pop. Biology", "Movement Eco.", "Biogeography", "Land. Ecology" )
+
+resul4<-data.frame(ts2, ter2, odd3)
+colnames(resul4)<-  c("TS", "TheSca", "OR", "LW", "UP")
+resul4[2,5]<- 0.0
+View(resul4)
+
+bs<-filter(resul4,TS=="Scale")
+mp<-filter(resul4,TS=="Terms")
+write.xlsx(resul4,"Taxon.xlsx", overwrite = T)
+```
+
+Biological scale x Theoretical study for mammals graphic.
+
+```{r}
+BS2<- ggplot(bs, aes(x=TheSca,y= OR, ymin= LW, ymax= UP))+ 
+  geom_point(size=5)+
+  geom_errorbar(data= bs, width= 0.05, size= 1)+
+  coord_flip()+
+  scale_y_continuous(breaks= seq(0.0,4.0, 0.5),limits = c(0.0,4.0))+
+  geom_hline(yintercept = 1, linetype="dashed", size= 1)+
+  xlab("Biological Scale")+
+  ylab("Odds Ratio")+
+  labs(tag= "a)" ,title = "Mammals")+
+  annotate("text", x = c(2.9), y =c(0.8), label = "*", size= 18 )+
+  theme_classic() +
+  theme(panel.grid.major = element_blank(),axis.text = element_text(colour = "Black",size=16), axis.text.y = element_text(colour = "Black",size=14),panel.grid.minor = element_blank(),axis.title = element_text(colour = "Black", size= 20), legend.title = element_blank(), legend.text = element_text(size = 18),plot.title = element_text(hjust = 0.5, size = 23),strip.background = element_blank(), axis.line = element_line(size = 1),
+        plot.tag = element_text(size = 16, face = "bold"))
+
+```
+
+Motion process x Theoretical study for mammals graphic.
+
+```{r}
+MP2<- ggplot(mp, aes(x=TheSca,y= OR, ymin= LW, ymax= UP))+ 
+  geom_point(size=5)+
+  geom_errorbar(data= mp, width= 0.05, size= 1)+
+  coord_flip()+
+  scale_y_continuous(breaks= seq(0.0,7.5, 0.5),limits = c(0.0,7.5))+
+  geom_hline(yintercept = 1, linetype="dashed", size= 1)+
+  xlab("Motion process")+
+  ylab("Odds Ratio")+
+  labs(tag= "b)" ,title = "Mammals")+
+  annotate("text", x = c(0.9), y =c(7.5), label = "*", size= 18 )+
+  annotate("text", x = c(1.9), y =c(0.2), label = "*", size= 18 )+
+  theme_classic() +
+  theme(panel.grid.major = element_blank(),axis.text = element_text(colour = "Black",size=16), axis.text.y = element_text(colour = "Black",size=14),panel.grid.minor = element_blank(),axis.title = element_text(colour = "Black", size= 20), legend.title = element_blank(), legend.text = element_text(size = 18),plot.title = element_text(hjust = 0.5, size = 23),strip.background = element_blank(), axis.line = element_line(size = 1),
+        plot.tag = element_text(size = 16, face = "bold"))
+
+```
+
+```{r}
+ggarrange(BS2,MP2, nrow = 1,ncol = 2)
+
+ggsave(filename = "Figure_6.pdf", width = 60, height = 22, units = "cm", dpi = 600)
+```
