@@ -96,7 +96,7 @@ Calculating the frequency tables of Biological Scales and study Methods Analysis
 
 ```{r}
 ### Theoretical and Scales
-ftpop<- ftable(metlv2$theoretical, metlv2$pop_biol)
+ftpop<- ftable(metlv$theoretical, metlv$pop_biol)
 ftpop<-ftpop[,c(2,1)]
 ftmeco<- ftable(metlv$theoretical, metlv$move_ecol)
 ftmeco<-ftmeco[,c(2,1)]
@@ -156,7 +156,7 @@ BS<-ggplot(tab, aes(x=sc,y= OR, ymin= lw, ymax= up))+
   geom_point(size=5)+
   geom_errorbar(data= tab, width= 0.05, size= 1)+
   coord_flip()+
-  scale_y_continuous(breaks= seq(0.2,3.5, 0.3),limits = c(0.2,3.5))+
+  scale_y_continuous(breaks= seq(0.0,4.0, 0.5),limits = c(0.0,4.0))+
   geom_hline(yintercept = 1, linetype="dashed", size= 1)+
   xlab("Biological Scale")+
   ylab("Odds Ratio")+
@@ -165,7 +165,7 @@ BS<-ggplot(tab, aes(x=sc,y= OR, ymin= lw, ymax= up))+
   theme_classic() +
   theme(panel.grid.major = element_blank(),axis.text = element_text(colour = "Black",size=16), axis.text.y = element_text(colour = "Black",size=14),panel.grid.minor = element_blank(),axis.title = element_text(colour = "Black", size= 20), legend.title = element_blank(), legend.text = element_text(size = 18),plot.title = element_text(hjust = 0.5, size = 23),strip.background = element_blank(), strip.text = element_blank(),
         axis.line = element_line(size = 1),
-        plot.tag = element_text(size = 16, face = "bold"))
+        plot.tag = element_text(size = 18, face = "bold"))
 ```
 
 # 3. Movement process and Study methods
@@ -245,6 +245,8 @@ sc2<-c("Dispersal", "Dispersion", "Displacement", "Movement", "Migration")
 tabela2<-data.frame(sc2,odd2)
 View(tabela2)
 
+tabela2<- tabela2[-c(6:10),]
+
 write.xlsx(tabela2, "MotionProcess.xlsx", overwrite = T)
 ```
 
@@ -255,7 +257,7 @@ MP<-ggplot(tabela2, aes(x=sc2,y= OR, ymin= lw, ymax= up))+
   geom_point(size=5)+
   geom_errorbar(data= tabela2, width= 0.05, size= 1)+
   coord_flip()+
-  scale_y_continuous(breaks= seq(0.0,5.0, 0.5),limits = c(0.0,5.0))+
+  scale_y_continuous(breaks= seq(0.0,8.0, 1.0),limits = c(0.0,8.0))+
   geom_hline(yintercept = 1, linetype="dashed", size= 1)+
   xlab("Motion process")+
   ylab("Odds Ratio")+
@@ -265,7 +267,7 @@ MP<-ggplot(tabela2, aes(x=sc2,y= OR, ymin= lw, ymax= up))+
   theme_classic() +
   theme(panel.grid.major = element_blank(),axis.text = element_text(colour = "Black",size=16), axis.text.y = element_text(colour = "Black",size=14),panel.grid.minor = element_blank(),axis.title = element_text(colour = "Black", size= 20), legend.title = element_blank(), legend.text = element_text(size = 18),plot.title = element_text(hjust = 0.5, size = 23),strip.background = element_blank(), strip.text = element_blank(),
         axis.line = element_line(size = 1),
-        plot.tag = element_text(size = 16, face = "bold"))
+        plot.tag = element_text(size = 18, face = "bold"))
 ```
 
 Uniting the graphics.
@@ -357,12 +359,18 @@ View(resul4)
 bs<-filter(resul4,TS=="Scale")
 mp<-filter(resul4,TS=="Terms")
 write.xlsx(resul4,"Taxon.xlsx", overwrite = T)
+
+
+dados<-read.xlsx("Taxon.xlsx")
+bs<-filter(dados,Fig=="Biological Scale")
+mp<-filter(dados,Fig=="Motion Process")
+
 ```
 
 Biological scale x Theoretical study for mammals graphic.
 
 ```{r}
-BS2<- ggplot(bs, aes(x=TheSca,y= OR, ymin= LW, ymax= UP))+ 
+BS2<- ggplot(bs, aes(x=Var,y= OR, ymin=ICmin, ymax= Icmax))+ 
   geom_point(size=5)+
   geom_errorbar(data= bs, width= 0.05, size= 1)+
   coord_flip()+
@@ -370,36 +378,36 @@ BS2<- ggplot(bs, aes(x=TheSca,y= OR, ymin= LW, ymax= UP))+
   geom_hline(yintercept = 1, linetype="dashed", size= 1)+
   xlab("Biological Scale")+
   ylab("Odds Ratio")+
-  labs(tag= "a)" ,title = "Mammals")+
+  labs(tag= "c)" ,title = "Mammals")+
   annotate("text", x = c(2.9), y =c(0.8), label = "*", size= 18 )+
   theme_classic() +
   theme(panel.grid.major = element_blank(),axis.text = element_text(colour = "Black",size=16), axis.text.y = element_text(colour = "Black",size=14),panel.grid.minor = element_blank(),axis.title = element_text(colour = "Black", size= 20), legend.title = element_blank(), legend.text = element_text(size = 18),plot.title = element_text(hjust = 0.5, size = 23),strip.background = element_blank(), axis.line = element_line(size = 1),
-        plot.tag = element_text(size = 16, face = "bold"))
+        plot.tag = element_text(size = 18, face = "bold"))
 
 ```
 
 Motion process x Theoretical study for mammals graphic.
 
 ```{r}
-MP2<- ggplot(mp, aes(x=TheSca,y= OR, ymin= LW, ymax= UP))+ 
+MP2<- ggplot(mp, aes(x=Var,y= OR, ymin=ICmin, ymax= Icmax))+ 
   geom_point(size=5)+
   geom_errorbar(data= mp, width= 0.05, size= 1)+
   coord_flip()+
-  scale_y_continuous(breaks= seq(0.0,7.5, 0.5),limits = c(0.0,7.5))+
+  scale_y_continuous(breaks= seq(0.0,8.0, 1.0),limits = c(0.0,8.0))+
   geom_hline(yintercept = 1, linetype="dashed", size= 1)+
   xlab("Motion process")+
   ylab("Odds Ratio")+
-  labs(tag= "b)" ,title = "Mammals")+
+  labs(tag= "d)" ,title = "Mammals")+
   annotate("text", x = c(0.9), y =c(7.5), label = "*", size= 18 )+
-  annotate("text", x = c(1.9), y =c(0.2), label = "*", size= 18 )+
+  annotate("text", x = c(1.85), y =c(0.25), label = "*", size= 18 )+
   theme_classic() +
   theme(panel.grid.major = element_blank(),axis.text = element_text(colour = "Black",size=16), axis.text.y = element_text(colour = "Black",size=14),panel.grid.minor = element_blank(),axis.title = element_text(colour = "Black", size= 20), legend.title = element_blank(), legend.text = element_text(size = 18),plot.title = element_text(hjust = 0.5, size = 23),strip.background = element_blank(), axis.line = element_line(size = 1),
-        plot.tag = element_text(size = 16, face = "bold"))
+        plot.tag = element_text(size = 18, face = "bold"))
 
 ```
 
 ```{r}
-ggarrange(BS2,MP2, nrow = 1,ncol = 2)
+ggarrange(BS,MP,BS2,MP2, nrow = 2,ncol = 2)
 
-ggsave(filename = "Figure_6.pdf", width = 60, height = 22, units = "cm", dpi = 600)
+ggsave(filename = "Figure_3.pdf", width =43, height = 30, units = "cm", dpi = 600)
 ```
